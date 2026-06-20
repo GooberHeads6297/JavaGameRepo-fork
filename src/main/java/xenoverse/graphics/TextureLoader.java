@@ -1,6 +1,7 @@
 package xenoverse.graphics;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.stb.STBImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,8 +9,35 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import static org.lwjgl.opengl.GL33.*;
+import static org.lwjgl.glfw.GLFW.glfwSetWindowIcon;
 
 public class TextureLoader {
+    public static void setWindowIconFromResource(long window, String resourcePath) {
+        try (InputStream input = TextureLoader.class.getResourceAsStream(resourcePath)) {
+            if (input == null) {
+                throw new RuntimeException("Resource not found: " + resourcePath);
+            }
+
+            ByteBuffer imageBuffer = ioResourceToByteBuffer(input, 8192);
+            IntBuffer width = BufferUtils.createIntBuffer(1);
+            IntBuffer height = BufferUtils.createIntBuffer(1);
+            IntBuffer channels = BufferUtils.createIntBuffer(1);
+            ByteBuffer pixels = STBImage.stbi_load_from_memory(imageBuffer, width, height, channels, 4);
+            if (pixels == null) {
+                throw new RuntimeException("Failed to load window icon: " + STBImage.stbi_failure_reason());
+            }
+
+            try (GLFWImage.Buffer icons = GLFWImage.malloc(1)) {
+                icons.position(0).width(width.get(0)).height(height.get(0)).pixels(pixels);
+                glfwSetWindowIcon(window, icons);
+            } finally {
+                STBImage.stbi_image_free(pixels);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read window icon: " + resourcePath, e);
+        }
+    }
+
     public static int loadTextureFromResource(String resourcePath) {
         try (InputStream input = TextureLoader.class.getResourceAsStream(resourcePath)) {
             if (input == null) {

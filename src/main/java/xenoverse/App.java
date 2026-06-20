@@ -38,6 +38,7 @@ public class App {
 
     private void init() {
         GLFWErrorCallback.createPrint(System.err).set();
+        configureGlfwPlatform();
 
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
@@ -47,16 +48,27 @@ public class App {
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
+        int platform = glfwGetPlatform();
+        if (platform == GLFW_PLATFORM_X11) {
+            glfwWindowHintString(GLFW_X11_CLASS_NAME, "Xenoverse");
+            glfwWindowHintString(GLFW_X11_INSTANCE_NAME, "xenoverse");
+        } else if (platform == GLFW_PLATFORM_WAYLAND) {
+            glfwWindowHintString(GLFW_WAYLAND_APP_ID, "xenoverse");
+        }
+
         window = glfwCreateWindow(800, 600, "Xenoverse", NULL, NULL);
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
 
-        GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        if (vidmode != null) {
-            glfwSetWindowPos(window,
-                (vidmode.width() - 800) / 2,
-                (vidmode.height() - 600) / 2);
+        if (platform != GLFW_PLATFORM_WAYLAND) {
+            GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+            if (vidmode != null) {
+                glfwSetWindowPos(window,
+                    (vidmode.width() - 800) / 2,
+                    (vidmode.height() - 600) / 2);
+            }
+            TextureLoader.setWindowIconFromResource(window, "/atlas.png");
         }
 
         glfwMakeContextCurrent(window);
@@ -116,6 +128,30 @@ public class App {
 
             camera.updateRotation((float) xoffset * 0.1f, (float) yoffset * 0.1f);
         });
+    }
+
+    private void configureGlfwPlatform() {
+        if (!System.getProperty("os.name", "").toLowerCase().contains("linux")) {
+            return;
+        }
+
+        String requestedPlatform = System.getenv().getOrDefault("XENOVERSE_GLFW_PLATFORM", "auto");
+        switch (requestedPlatform.toLowerCase()) {
+            case "auto" -> {
+                // XWayland avoids EGL/libdecor issues seen on some native Wayland drivers.
+                if (System.getenv("DISPLAY") != null) {
+                    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+                }
+            }
+            case "x11" -> glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+            case "wayland" -> {
+                glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
+                glfwInitHint(GLFW_WAYLAND_LIBDECOR, GLFW_WAYLAND_DISABLE_LIBDECOR);
+            }
+            default -> throw new IllegalArgumentException(
+                "XENOVERSE_GLFW_PLATFORM must be auto, x11, or wayland"
+            );
+        }
     }
 
     private void loop() {
