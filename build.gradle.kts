@@ -1,5 +1,6 @@
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 
 plugins {
@@ -42,6 +43,11 @@ java {
     }
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(8)
+    options.compilerArgs.add("-Xlint:-options")
+}
+
 application {
     mainClass.set("xenoverse.App")
 }
@@ -62,6 +68,7 @@ tasks.register<Jar>("portableJar") {
 
     manifest {
         attributes["Main-Class"] = application.mainClass.get()
+        attributes["Implementation-Title"] = "Xenoverse"
     }
 
     dependsOn("classes")
