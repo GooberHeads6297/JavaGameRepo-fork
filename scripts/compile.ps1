@@ -66,12 +66,16 @@ New-Item -ItemType Directory -Force -Path $gradleUserHome | Out-Null
 New-Item -ItemType Directory -Force -Path $projectCacheDir | Out-Null
 New-Item -ItemType Directory -Force -Path $outputBuildDir | Out-Null
 New-Item -ItemType Directory -Force -Path $distDir | Out-Null
+$publishedJar = Join-Path $distDir $jarName
+$checksumFile = "$publishedJar.sha256"
+Remove-Item -LiteralPath $publishedJar -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $checksumFile -Force -ErrorAction SilentlyContinue
 
 if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
     throw 'Java 21 or newer is required but was not found on PATH.'
 }
 
-& $gradleCmd --gradle-user-home $gradleUserHome --project-cache-dir $projectCacheDir "-PxenoverseBuildDir=$outputBuildDir" portableJar
+& $gradleCmd --gradle-user-home $gradleUserHome --project-cache-dir $projectCacheDir "-PxenoverseBuildDir=$outputBuildDir" clean portableJar
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
@@ -81,5 +85,8 @@ if (-not (Test-Path -LiteralPath $sourceJar -PathType Leaf)) {
     throw "Build completed, but the portable JAR was not created at: $sourceJar"
 }
 
-Copy-Item -LiteralPath $sourceJar -Destination (Join-Path $distDir $jarName) -Force
-Write-Host "Portable game created: $(Join-Path $distDir $jarName)"
+Copy-Item -LiteralPath $sourceJar -Destination $publishedJar -Force
+$hash = (Get-FileHash -LiteralPath $publishedJar -Algorithm SHA256).Hash.ToLowerInvariant()
+Set-Content -LiteralPath $checksumFile -Value "$hash  $jarName" -Encoding ASCII
+Write-Host "Portable game created: $publishedJar"
+Write-Host "SHA-256: $hash"

@@ -6,6 +6,7 @@ import org.lwjgl.stb.STBImageWrite;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
+import java.util.Arrays;
 
 public class AtlasGenerator {
     public static void generateAtlas(List<String> texturePaths, String outputPath, int tilesPerRow, int tileSize) {
@@ -52,7 +53,7 @@ public class AtlasGenerator {
 
     public static void main(String[] args) {
         // Use the PNG files in resources folder
-        List<String> textures = List.of(
+        List<String> textures = Arrays.asList(
             "src/main/resources/stone.png",
             "src/main/resources/grass.png",
             "src/main/resources/dirt.png",

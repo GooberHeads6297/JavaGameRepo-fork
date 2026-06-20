@@ -5,11 +5,12 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Arrays;
 
 public class AtlasBuilder {
     public static void main(String[] args) throws IOException {
         File base = new File("app/src/main/resources");
-        List<String> names = List.of("stone.png", "grass.png", "dirt.png", "sand.png");
+        List<String> names = Arrays.asList("stone.png", "grass.png", "dirt.png", "sand.png");
         int tileSize = 64;
         int cols = 4;
         int rows = 1;

@@ -58,12 +58,13 @@ if ! command -v java >/dev/null 2>&1; then
 fi
 
 mkdir -p "$GRADLE_USER_HOME" "$PROJECT_CACHE_DIR" "$OUTPUT_BUILD_DIR" "$DIST_DIR"
+rm -f "$DIST_DIR/$JAR_NAME" "$DIST_DIR/$JAR_NAME.sha256"
 
 "$GRADLE_CMD" \
   --gradle-user-home "$GRADLE_USER_HOME" \
   --project-cache-dir "$PROJECT_CACHE_DIR" \
   -PxenoverseBuildDir="$OUTPUT_BUILD_DIR" \
-  portableJar
+  clean portableJar
 
 SOURCE_JAR="$OUTPUT_BUILD_DIR/libs/$JAR_NAME"
 if [[ ! -f "$SOURCE_JAR" ]]; then
@@ -72,4 +73,6 @@ if [[ ! -f "$SOURCE_JAR" ]]; then
 fi
 
 install -m 0644 "$SOURCE_JAR" "$DIST_DIR/$JAR_NAME"
+(cd "$DIST_DIR" && sha256sum "$JAR_NAME" > "$JAR_NAME.sha256")
 echo "Portable game created: $DIST_DIR/$JAR_NAME"
+echo "SHA-256: $(sha256sum "$DIST_DIR/$JAR_NAME" | awk '{print $1}')"
